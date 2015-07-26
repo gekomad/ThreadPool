@@ -27,6 +27,7 @@
 #include <bitset>
 #include <assert.h>
 #include "Thread.h"
+#include "CoutSync.h"
 
 using namespace std;
 
@@ -40,7 +41,7 @@ public:
     ThreadPool(int n) : nThread(n) {
         assert(n < MAX_THREAD);
         if (thread::hardware_concurrency() && nThread > thread::hardware_concurrency()) {
-            cout << "WARNING active threads (" << nThread << ") > physical cores (" << thread::hardware_concurrency() << ")\n\n";
+            CoutSync() << "WARNING active threads (" << nThread << ") > physical cores (" << thread::hardware_concurrency() << ")\n";
         }
         for (int i = 0; i < n; i++) {
             T *x = new T(i);

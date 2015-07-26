@@ -28,10 +28,12 @@ public:
 
     void run() {
         for (int i = 0; i < 2; i++) {
-            cout << "step " << i << "/" << 1 << " from thread id: " << getId() << endl;
+            CoutSync() << "thread #" << getId() << " step " << i << "/" << 1;
             sleep(1);
         }
     };
 
-    void endThread() { cout << "end thread id:" << getId() << endl; };
+    void endThread() {
+        CoutSync() << "thread #" << getId() << " end work";
+    };
 };
