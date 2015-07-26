@@ -5,15 +5,15 @@
 using namespace std;
 
 int main() {
-
-    ThreadPool<MyThread> threadPool(16);
-    for (int i = 0; i < 1000; i++) {
-        cout << "main step " << i << "/" << 100 << endl;
-
+    int activeThread = 2;
+    ThreadPool<MyThread> threadPool(activeThread);
+    for (int i = 0; i < 10; i++) {
         MyThread &s = threadPool.getNextThread();
-
+        cout << "main thread -------------------------------" << i << "/" << 10 << endl;
         threadPool.startThread(s);
     }
-    cout << "end" << endl;
+    cout << "main thread wait for join\n";
+    threadPool.joinAll();
+    cout << "main thread end\n";
     return 0;
 }

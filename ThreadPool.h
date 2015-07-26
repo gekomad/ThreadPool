@@ -39,6 +39,9 @@ public:
 
     ThreadPool(int n) : nThread(n) {
         assert(n < MAX_THREAD);
+        if (thread::hardware_concurrency() && nThread > thread::hardware_concurrency()) {
+            cout << "WARNING active threads (" << nThread << ") > physical cores (" << thread::hardware_concurrency() << ")\n\n";
+        }
         for (int i = 0; i < n; i++) {
             T *x = new T(i);
             x->registerObserverThread(this);
@@ -52,16 +55,22 @@ public:
             cv.wait();
         }
         int i;
-        for (i = 0; i < MAX_THREAD; i++) {
+        for (i = 0; i < nThread; i++) {
             if (threadsBits[i] == 0)break;
         }
-        assert(i != MAX_THREAD);
+        assert(i != nThread);
         threadsBits[i] = 1;
         return *threadPool[i];
     }
 
     void observerEndThread(int threadID) {
         releaseThread(threadID);
+    }
+
+    void joinAll() {
+       for(T* s:threadPool){
+           s->join();
+       }
     }
 
     void startThread(T &thread) {
