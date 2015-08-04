@@ -27,7 +27,7 @@ public:
     void run() {
         for (int i = 0; i < 2; i++) {
             debug("thread #", getId(), " step ", i, "/", 1);
-            sleep(rand() % 5);
+            sleep(rand() % 3);
         }
     };
 
@@ -35,7 +35,4 @@ public:
         debug("thread #", getId(), " terminated");
     }
 
-//    void endThread() {
-//        debug("thread #", getId(), " end work");
-//    };
 };
