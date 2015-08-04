@@ -24,11 +24,12 @@ using namespace std;
 
 int main() {
     srand(time(NULL));
-
+    int TOT = 100;
     ThreadPool<MyThread> *threadPool = new ThreadPool<MyThread>();
-    for (int i = 1; i <= 100; i++) {
+    threadPool->setNthread(4);
+    for (int i = 1; i <= TOT; i++) {
         MyThread &s = threadPool->getNextThread();
-        debug("main thread -------------------------------", i, "/", 100);
+        debug("main thread -------------------------------", i, "/", TOT);
         s.start();
     }
     debug("main thread wait for join");
