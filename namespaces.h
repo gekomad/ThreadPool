@@ -60,7 +60,6 @@ void debug(T t, Args... args) {
     cout << endl;
 }
 
-#define assert(a) if(!(a)){  cout<<dec<<endl<<" ********************************** assert error in "<< " line "<<__LINE__<<" "<<" **********************************"<<endl;cerr<<flush;exit(1);};
 #define ASSERT(a) assert(a)
 typedef unsigned char uchar;
 static const int POW2[9] = {0x1ULL, 0x2ULL, 0x4ULL, 0x8ULL, 0x10ULL, 0x20ULL, 0x40ULL, 0x80ULL, 0x100ULL};
