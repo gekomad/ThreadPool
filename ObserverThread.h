@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "ThreadPool.h"
-
 using namespace std;
 
 class ObserverThread {

@@ -18,20 +18,22 @@
 #include <iostream>
 #include "../ThreadPool.h"
 #include "MyThread.h"
-#include "../CoutSync.h"
+
 
 using namespace std;
 
 int main() {
-    int activeThread = 2;
-    ThreadPool<MyThread> threadPool(activeThread);
-    for (int i = 1; i <= 10; i++) {
-        MyThread &s = threadPool.getNextThread();
-        CoutSync() << "main thread -------------------------------" << i << "/" << 10;
-        threadPool.startThread(s);
+    srand(time(NULL));
+
+    ThreadPool<MyThread> *threadPool = new ThreadPool<MyThread>();
+    for (int i = 1; i <= 100; i++) {
+        MyThread &s = threadPool->getNextThread();
+        debug("main thread -------------------------------", i, "/", 100);
+        s.start();
     }
-    CoutSync() << "main thread wait for join";
-    threadPool.joinAll();
-    CoutSync() << "main thread end";
+    debug("main thread wait for join");
+    threadPool->joinAll();
+    debug("main thread end");
+    delete threadPool;
     return 0;
 }

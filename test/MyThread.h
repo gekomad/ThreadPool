@@ -22,18 +22,20 @@
 
 class MyThread : public Thread {
 public:
-    MyThread(int i) {
-        Thread::setId(i);
-    };
+    MyThread(int i) : Thread(i) { };
 
     void run() {
         for (int i = 0; i < 2; i++) {
-            CoutSync() << "thread #" << getId() << " step " << i << "/" << 1;
-            sleep(1);
+            debug("thread #", getId(), " step ", i, "/", 1);
+            sleep(rand() % 5);
         }
     };
 
-    void endThread() {
-        CoutSync() << "thread #" << getId() << " end work";
-    };
+    void endRun() {
+        debug("thread #", getId(), " terminated");
+    }
+
+//    void endThread() {
+//        debug("thread #", getId(), " end work");
+//    };
 };

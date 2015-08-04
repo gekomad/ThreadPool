@@ -1,4 +1,5 @@
 /*
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -17,95 +18,145 @@
 
 #pragma once
 
-#include <thread>
+#include "Thread.h"
+#include <atomic>
 #include <mutex>
-#include <vector>
 #include <unistd.h>
 #include "ObserverThread.h"
-#include <math.h>
-#include "ConditionVariable.h"
-#include <bitset>
-#include <assert.h>
-#include "Thread.h"
-#include "CoutSync.h"
-
-using namespace std;
-
+#include "namespaces.h"
+#include <condition_variable>
 
 template<typename T, typename = typename std::enable_if<std::is_base_of<Thread, T>::value, T>::type>
-class ThreadPool : virtual public ObserverThread {
+class ThreadPool : public ObserverThread {
 
 public:
-    static const int MAX_THREAD = 128;
+    const static int MAX_THREAD = 8;
 
-    ThreadPool(int n) : nThread(n) {
-        assert(n < MAX_THREAD);
-        if (thread::hardware_concurrency() && nThread > thread::hardware_concurrency()) {
-            CoutSync() << "WARNING active threads (" << nThread << ") > physical cores (" << thread::hardware_concurrency() << ")\n";
+    ThreadPool() : threadsBits(0) {
+
+        generateBitMap();
+        for (int i = 0; i < MAX_THREAD; i++) {
+            threadPool.push_back(new T(i));
         }
-        for (int i = 0; i < n; i++) {
-            T *x = new T(i);
-            x->registerObserverThread(this);
-            threadPool.push_back(x);
+
+        registerThreads();
+
+        if (thread::hardware_concurrency() && (unsigned) getNthread() > thread::hardware_concurrency()) {
+            cout << "WARNING active threads (" << getNthread() << ") > physical cores (" << thread::hardware_concurrency() << ")" << endl;
         }
+        else {
+            cout << "Active threads: " << getNthread() << "\n";
+        }
+
     }
 
     T &getNextThread() {
-        lock_guard<mutex> lock1(mx);
-        if (threadsBits.count() == nThread) {
-            cv.wait();
+        lock_guard<mutex> lock1(mxGet);
+        unique_lock<mutex> lck(mtx);
+        debug("ThreadPool::getNextThread");
+        if (bitMap[threadsBits].count == nThread) {
+            debug("ThreadPool::getNextThread go wait");
+            cv.wait(lck);
+            debug("ThreadPool::getNextThread exit wait");
         }
-        int i;
-        for (i = 0; i < nThread; i++) {
-            if (threadsBits[i] == 0)break;
-        }
-        assert(i != nThread);
-        threadsBits[i] = 1;
+
+        int i = bitMap[threadsBits].firstUnsetBit;
+        threadPool[i]->join();
+        ASSERT(!(threadsBits & POW2[i]));
+        threadsBits |= POW2[i];
+        debug("ThreadPool::getNextThread inc bit");
         return *threadPool[i];
+    }
+
+    int getNthread() const {
+        return nThread;
+    }
+
+    void setNthread(const int t) {
+        joinAll();
+        nThread = t;
+        ASSERT(threadsBits == 0);
+    }
+
+    void joinAll() {
+        for (T *s:threadPool) {
+            s->join();
+        }
+    }
+
+    ~ThreadPool() {
+        joinAll();
+        for (T *s:threadPool) {
+            delete s;
+            s = nullptr;
+        }
+        threadPool.clear();
+    }
+
+protected:
+
+    vector<T *> threadPool;
+
+
+
+private:
+    typedef struct {
+        uchar firstUnsetBit;
+        uchar count;
+    } _Tslot;
+    mutex mtx;
+    int threadsBits;
+    int nThread = 6;
+    condition_variable cv;
+    mutex mxGet;
+
+    _Tslot bitMap[256];
+
+    void releaseThread(const int threadID) {
+
+       // lock_guard<mutex> lock1(mxGet);
+
+        ASSERT(threadsBits & POW2[threadID]);
+        int count = bitMap[threadsBits].count;
+        threadsBits &= ~POW2[threadID];
+        debug("ThreadPool::releaseThread threadID:", threadID);
+        if (count == nThread) {
+            debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
+            cv.notify_one();
+        }
     }
 
     void observerEndThread(int threadID) {
         releaseThread(threadID);
     }
 
-    void joinAll() {
-       for(T* s:threadPool){
-           s->join();
-       }
-    }
-
-    void startThread(T &thread) {
-        thread.start();
-    }
-
-    ~ThreadPool() {
-        destroy();
-    }
-
-protected:
-    vector<T *> threadPool;
-
-private:
-    mutex mx;
-    mutex mx1;
-
-    bitset<MAX_THREAD> threadsBits = 0;
-
-    int nThread;
-    ConditionVariable cv;
-
-    void releaseThread(int threadID) {
-        lock_guard<mutex> lock1(mx1);
-        threadsBits[threadID] = 0;
-        cv.notifyOne();
-    }
-
-    void destroy() {
-        for (unsigned i = 0; i < threadPool.size(); i++) {
-            delete threadPool[i];
+    void registerThreads() {
+        for (T *s:threadPool) {
+            s->registerObserverThread(this);
         }
-        threadPool.clear();
     }
+
+    void generateBitMap() {
+        for (int idx = 0; idx < 256; idx++) {
+            int g = idx;
+            bitMap[idx].firstUnsetBit = 0;
+            for (int i = 0; i < 8; ++i) {
+                if (g & 1) {
+                    bitMap[idx].count++;
+                }
+                g >>= 1;
+            }
+            g = idx;
+            for (int i = 0; i < 8; ++i) {
+                if ((g & 1) == 0) {
+                    bitMap[idx].firstUnsetBit = i;
+                    break;
+                }
+                g >>= 1;
+            }
+        };
+    }
+
 
 };
 

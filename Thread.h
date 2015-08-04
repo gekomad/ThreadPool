@@ -1,4 +1,5 @@
 /*
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -20,6 +21,8 @@
 #include <thread>
 #include <mutex>
 #include "ObserverThread.h"
+#include "namespaces.h"
+#include <condition_variable>
 
 using namespace std;
 
@@ -27,42 +30,63 @@ class Runnable {
 public:
     virtual void run() = 0;
 
-    virtual void endThread() = 0;
+    virtual void endRun() = 0;
 };
 
 class Thread : virtual public Runnable {
 
 private:
-
-    int threadID = -1;
+    bool running = true;
+    int threadID;
     ObserverThread *observer = nullptr;
+    condition_variable cv;
     thread theThread;
-
+//    mutex checkWaitMutex;
     Runnable *execRunnable;
 
     static void *__run(void *cthis) {
         static_cast<Runnable *>(cthis)->run();
-        static_cast<Runnable *>(cthis)->endThread();
+        static_cast<Runnable *>(cthis)->endRun();
         static_cast<Thread *>(cthis)->notifyEndThread((static_cast<Thread *>(cthis))->getId());
 
         return nullptr;
     }
 
 public:
+
+    Thread(int id) {
+        threadID = id;
+        execRunnable = this;
+    }
+
     void registerObserverThread(ObserverThread *obs) {
         observer = obs;
     }
 
-    void notifyEndThread(int threadID) {
-        observer->observerEndThread(threadID);
+    void notifyEndThread(int i) {
+        if (observer != nullptr) {
+            observer->observerEndThread(i);
+        }
     }
 
-    Thread() {
-        execRunnable = this;
+    virtual ~Thread() {
+        join();
+    }
+
+    void checkWait() {
+        while (!running) {
+            mutex mtx;
+            unique_lock<mutex> lck(mtx);
+            cv.wait(lck);
+        }
+    }
+
+    void notify() {
+        cv.notify_all();
     }
 
     void start() {
-        join();
+        ASSERT(!isJoinable());
         theThread = thread(__run, execRunnable);
     }
 
@@ -72,11 +96,20 @@ public:
         }
     }
 
+    void detach() {
+        theThread.detach();
+    }
+
     int getId() const {
         return threadID;
     }
 
-    void setId(int threadID) {
-        Thread::threadID = threadID;
+    void threadSleep(bool b) {
+        running = !b;
     }
+
+    bool isJoinable() {
+        return theThread.joinable();
+    }
+
 };
