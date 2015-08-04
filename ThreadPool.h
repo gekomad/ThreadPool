@@ -32,7 +32,7 @@ class ThreadPool : public ObserverThread {
 public:
     const static int MAX_THREAD = 8;
 
-    ThreadPool() : threadsBits(0) {
+    ThreadPool() : threadsBits(0), lock(false) {
 
         generateBitMap();
         for (int i = 0; i < MAX_THREAD; i++) {
@@ -56,7 +56,9 @@ public:
         debug("ThreadPool::getNextThread");
         if (bitMap[threadsBits].count == nThread) {
             debug("ThreadPool::getNextThread go wait");
+            lock = true;
             cv.wait(lck);
+            lock = false;
             debug("ThreadPool::getNextThread exit wait");
         }
 
@@ -98,8 +100,8 @@ protected:
     vector<T *> threadPool;
 
 
-
 private:
+    atomic_bool lock;
     typedef struct {
         uchar firstUnsetBit;
         uchar count;
@@ -109,20 +111,31 @@ private:
     int nThread = 6;
     condition_variable cv;
     mutex mxGet;
-
+    mutex mxRel;
     _Tslot bitMap[256];
 
     void releaseThread(const int threadID) {
-
-       // lock_guard<mutex> lock1(mxGet);
-
-        ASSERT(threadsBits & POW2[threadID]);
-        int count = bitMap[threadsBits].count;
-        threadsBits &= ~POW2[threadID];
-        debug("ThreadPool::releaseThread threadID:", threadID);
-        if (count == nThread) {
-            debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
-            cv.notify_one();
+        if (lock) {
+            lock_guard<mutex> lock1(mxRel);
+            int count = bitMap[threadsBits].count;
+            threadsBits &= ~POW2[threadID];
+            debug("ThreadPool::releaseThread threadID:", threadID);
+            if (count == nThread) {
+                debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
+                cv.notify_one();
+            }
+        } else {
+            cout << "lock" << endl;
+            lock_guard<mutex> lock1(mxGet);
+            cout << "unlock" << endl;
+            ASSERT(threadsBits & POW2[threadID]);
+            int count = bitMap[threadsBits].count;
+            threadsBits &= ~POW2[threadID];
+            debug("ThreadPool::releaseThread threadID:", threadID);
+            if (count == nThread) {
+                debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
+                cv.notify_one();
+            }
         }
     }
 
