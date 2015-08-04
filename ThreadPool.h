@@ -32,7 +32,7 @@ class ThreadPool : public ObserverThread {
 public:
     const static int MAX_THREAD = 8;
 
-    ThreadPool() : threadsBits(0), lock(false) {
+    ThreadPool() : threadsBits(0) {
 
         generateBitMap();
         for (int i = 0; i < MAX_THREAD; i++) {
@@ -56,7 +56,6 @@ public:
         debug("ThreadPool::getNextThread");
         if (bitMap[threadsBits].count == nThread) {
             debug("ThreadPool::getNextThread go wait");
-            lock = true;
             cv.wait(lck);
             debug("ThreadPool::getNextThread exit wait");
         }
@@ -100,43 +99,26 @@ protected:
 
 
 private:
-    atomic_bool lock;
     typedef struct {
         uchar firstUnsetBit;
         uchar count;
     } _Tslot;
     mutex mtx;
-    int threadsBits;
-    int nThread =8;
+    atomic_int threadsBits;
+    int nThread = 8;
     condition_variable cv;
     mutex mxGet;
     mutex mxRel;
     _Tslot bitMap[256];
 
     void releaseThread(const int threadID) {
-        if (lock) {
-            lock_guard<mutex> lock1(mxRel);
-           // int count = bitMap[threadsBits].count;
-            threadsBits &= ~POW2[threadID];
-            debug("ThreadPool::releaseThread threadID:", threadID);
-            //ASSERT (count == nThread);
-            debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
-            lock = false;
-            cv.notify_one();
 
-        } else {
-            cout << "lock" << endl;
-            lock_guard<mutex> lock1(mxGet);
-            cout << "unlock" << endl;
-            ASSERT(threadsBits & POW2[threadID]);
-            //int count = bitMap[threadsBits].count;
-            threadsBits &= ~POW2[threadID];
-            debug("ThreadPool::releaseThread threadID:", threadID);
-//            if (count == nThread) {
-//                debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
-//                cv.notify_one();
-//            }
-        }
+        ASSERT(threadsBits & POW2[threadID]);
+        threadsBits &= ~POW2[threadID];
+        debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
+
+        cv.notify_one();
+
     }
 
     void observerEndThread(int threadID) {
