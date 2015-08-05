@@ -43,7 +43,7 @@ public:
         if (nThread > 8) {
             nThread = 8;
         }
-        cout << "Active threads: " << nThread << "\n";
+        cout << "ThreadPool count: " << getNthread() << "\n";
 
     }
 
@@ -51,12 +51,7 @@ public:
         lock_guard<mutex> lock1(mxGet);
         unique_lock<mutex> lck(mtx);
         debug("ThreadPool::getNextThread");
-        if (bitMap[threadsBits].count == nThread) {
-            debug("ThreadPool::getNextThread go wait");
-            cv.wait(lck);
-            debug("ThreadPool::getNextThread exit wait");
-        }
-
+        cv.wait(lck, [this] { return bitMap[threadsBits].count != nThread; });
         int i = bitMap[threadsBits].firstUnsetBit;
         threadPool[i]->join();
         ASSERT(!(threadsBits & POW2[i]));
