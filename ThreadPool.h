@@ -48,16 +48,11 @@ public:
     }
 
     T &getNextThread() {
-        lock_guard<mutex> lock1(mxGet);
-        unique_lock<mutex> lck(mtx);
+        lock_guard<mutex> lock1(mxRel);
         debug("ThreadPool::getNextThread");
+        unique_lock<mutex> lck(mtx);
         cv.wait(lck, [this] { return bitMap[threadsBits].count != nThread; });
-        int i = bitMap[threadsBits].firstUnsetBit;
-        threadPool[i]->join();
-        ASSERT(!(threadsBits & POW2[i]));
-        threadsBits |= POW2[i];
-        debug("ThreadPool::getNextThread inc bit");
-        return *threadPool[i];
+        return getThread();
     }
 
     int getNthread() const {
@@ -104,14 +99,22 @@ private:
     mutex mxRel;
     _Tslot bitMap[256];
 
-    void releaseThread(const int threadID) {
+    T &getThread() {
+        lock_guard<mutex> lock1(mxGet);
+        int i = bitMap[threadsBits].firstUnsetBit;
+        threadPool[i]->join();
+        ASSERT(!(threadsBits & POW2[i]));
+        threadsBits |= POW2[i];
+        debug("ThreadPool::getNextThread inc bit");
+        return *threadPool[i];
+    }
 
+    void releaseThread(const int threadID) {
+        lock_guard<mutex> lock1(mxGet);
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
+        cv.notify_all();
         debug("ThreadPool::releaseThread NOTIFY threadID:", threadID);
-
-        cv.notify_one();
-
     }
 
     void observerEndThread(int threadID) {
