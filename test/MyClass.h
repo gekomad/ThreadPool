@@ -15,26 +15,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
+#include "../Thread.h"
 #include <iostream>
-#include "../ThreadPool.h"
-#include "MyClass.h"
+#include <unistd.h>
+
+class MyClass : public Thread {
+public:
+
+    virtual void run();
 
 
-using namespace std;
+    virtual void endRun();
 
-int main() {
-    srand(time(NULL));
-    int TOT = 100;
-    ThreadPool<MyClass> *threadPool = new ThreadPool<MyClass>();
-    threadPool->setNthread(4);
-    for (int i = 1; i <= TOT; i++) {
-        MyClass &s = threadPool->getNextThread();
-        debug("main thread -------------------------------", i, "/", TOT);
-        s.start();
-    }
-    debug("main thread wait for join");
-    threadPool->joinAll();
-    debug("main thread end");
-    delete threadPool;
-    return 0;
-}
+
+};

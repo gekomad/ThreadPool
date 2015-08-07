@@ -15,26 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
-#include "../ThreadPool.h"
+
 #include "MyClass.h"
 
-
-using namespace std;
-
-int main() {
-    srand(time(NULL));
-    int TOT = 100;
-    ThreadPool<MyClass> *threadPool = new ThreadPool<MyClass>();
-    threadPool->setNthread(4);
-    for (int i = 1; i <= TOT; i++) {
-        MyClass &s = threadPool->getNextThread();
-        debug("main thread -------------------------------", i, "/", TOT);
-        s.start();
+void MyClass::run() {
+    for (int i = 0; i < 2; i++) {
+        debug("thread #", getId(), " step ", i, "/", 1);
+        sleep(rand() % 3);
     }
-    debug("main thread wait for join");
-    threadPool->joinAll();
-    debug("main thread end");
-    delete threadPool;
-    return 0;
+};
+
+void MyClass::endRun() {
+    debug("thread #", getId(), " terminated");
 }
