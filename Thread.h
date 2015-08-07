@@ -53,8 +53,7 @@ private:
 
 public:
 
-    Thread(int id) {
-        threadID = id;
+    Thread() {
         execRunnable = this;
     }
 
@@ -101,6 +100,11 @@ public:
 
     int getId() const {
         return threadID;
+    }
+
+    void setId(int id) {
+        ASSERT_RANGE(id, 0, 7);
+        threadID = id;
     }
 
     void threadSleep(bool b) {

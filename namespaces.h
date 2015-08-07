@@ -61,6 +61,7 @@ void debug(T t, Args... args) {
 }
 
 #define ASSERT(a) assert(a)
+#define ASSERT_RANGE(value, from, to) assert((value)>=(from) && (value)<=(to))
 typedef unsigned char uchar;
 static const int POW2[9] = {0x1ULL, 0x2ULL, 0x4ULL, 0x8ULL, 0x10ULL, 0x20ULL, 0x40ULL, 0x80ULL, 0x100ULL};
 

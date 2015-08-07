@@ -35,7 +35,9 @@ public:
 
         generateBitMap();
         for (int i = 0; i < 8; i++) {
-            threadPool.push_back(new T(i));
+            T *x = new T();
+            x->setId(i);
+            threadPool.push_back(x);
         }
 
         registerThreads();
