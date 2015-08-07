@@ -19,6 +19,7 @@
 #include "../ThreadPool.h"
 #include "MyClass.h"
 
+//cd test && g++ -pthread -std=c++11 main.cpp MyClass.cpp
 
 using namespace std;
 
