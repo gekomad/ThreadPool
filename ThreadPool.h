@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include "ObserverThread.h"
 #include "namespaces.h"
+#include "Bits.h"
 #include <condition_variable>
 
 template<typename T, typename = typename std::enable_if<std::is_base_of<Thread, T>::value, T>::type>
@@ -32,28 +33,14 @@ class ThreadPool : public ObserverThread {
 public:
 
     ThreadPool() : threadsBits(0) {
-
-        generateBitMap();
-        for (int i = 0; i < 8; i++) {
-            T *x = new T();
-            x->setId(i);
-            threadPool.push_back(x);
-        }
-
-        registerThreads();
-        nThread = thread::hardware_concurrency();
-        if (nThread > 8) {
-            nThread = 8;
-        }
-        cout << "ThreadPool v1.0 count: " << getNthread() << "\n";
-
+        setNthread(thread::hardware_concurrency());
     }
 
     T &getNextThread() {
         lock_guard<mutex> lock1(mxRel);
         debug("ThreadPool::getNextThread");
         unique_lock<mutex> lck(mtx);
-        cv.wait(lck, [this] { return bitMap[threadsBits].count != nThread; });
+        cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
         return getThread();
     }
 
@@ -61,49 +48,71 @@ public:
         return nThread;
     }
 
+#ifdef DEBUG_MODE
+
+    int getBitCount() const {
+        return Bits::bitCount(threadsBits);
+    }
+
+#endif
+
     void setNthread(const int t) {
+        int n = std::max(1, std::min(64, t));
+        if (n == nThread) {
+            return;
+        }
         joinAll();
-        nThread = std::min(8, t);
-        cout << "Active threads: " << nThread << "\n";
+        removeAllThread();
+        nThread = n;
         ASSERT(threadsBits == 0);
+        for (int i = 0; i < nThread; i++) {
+            T *x = new T();
+            x->setId(i);
+            threadPool.push_back(x);
+        }
+        registerThreads();
+        cout << "ThreadPool size: " << getNthread() << "\n";
     }
 
     void joinAll() {
-        for (T *s:threadPool) {
-            s->join();
+        for (int i = 0; i < nThread; i++) {
+            threadPool[i]->join();
+        }
+    }
+
+    void sleepAll(bool b) {
+        for (int i = 0; i < nThread; i++) {
+            threadPool[i]->sleep(b);
+            if (!b) {
+                threadPool[i]->notify();
+            }
+        }
+    }
+
+    void startAll() {
+        for (int i = 0; i < nThread; i++) {
+            threadPool[i]->start();
         }
     }
 
     ~ThreadPool() {
-        joinAll();
-        for (T *s:threadPool) {
-            delete s;
-            s = nullptr;
-        }
-        threadPool.clear();
+        removeAllThread();
     }
 
 protected:
-
     vector<T *> threadPool;
-
-
 private:
-    typedef struct {
-        uchar firstUnsetBit;
-        uchar count;
-    } _Tslot;
+
     mutex mtx;
-    atomic_int threadsBits;
+    atomic<u64> threadsBits;
     int nThread;
     condition_variable cv;
     mutex mxGet;
     mutex mxRel;
-    _Tslot bitMap[256];
 
     T &getThread() {
         lock_guard<mutex> lock1(mxGet);
-        int i = bitMap[threadsBits].firstUnsetBit;
+        int i = Bits::BITScanForwardUnset(threadsBits);
         threadPool[i]->join();
         ASSERT(!(threadsBits & POW2[i]));
         threadsBits |= POW2[i];
@@ -112,6 +121,7 @@ private:
     }
 
     void releaseThread(const int threadID) {
+        ASSERT_RANGE(threadID, 0, 63);
         lock_guard<mutex> lock1(mxGet);
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
@@ -129,27 +139,14 @@ private:
         }
     }
 
-    void generateBitMap() {
-        for (int idx = 0; idx < 256; idx++) {
-            int g = idx;
-            bitMap[idx].firstUnsetBit = 0;
-            for (int i = 0; i < 8; ++i) {
-                if (g & 1) {
-                    bitMap[idx].count++;
-                }
-                g >>= 1;
-            }
-            g = idx;
-            for (int i = 0; i < 8; ++i) {
-                if ((g & 1) == 0) {
-                    bitMap[idx].firstUnsetBit = i;
-                    break;
-                }
-                g >>= 1;
-            }
-        };
+    void removeAllThread() {
+        joinAll();
+        for (T *s:threadPool) {
+            delete s;
+        }
+        threadPool.clear();
+        ASSERT(threadsBits == 0);
     }
-
 
 };
 

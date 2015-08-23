@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -103,7 +103,6 @@ public:
     }
 
     void setId(int id) {
-        ASSERT_RANGE(id, 0, 7);
         threadID = id;
     }
 
@@ -113,6 +112,10 @@ public:
 
     bool isJoinable() {
         return theThread.joinable();
+    }
+
+    void setSleep(bool b) {
+        running = !b;
     }
 
 };
