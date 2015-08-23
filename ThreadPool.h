@@ -1,5 +1,5 @@
 /*
-    Cinnamon UCI chess engine
+    https://github.com/gekomad/ThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ public:
         if (nThread > 8) {
             nThread = 8;
         }
-        cout << "ThreadPool count: " << getNthread() << "\n";
+        cout << "ThreadPool v1.0 count: " << getNthread() << "\n";
 
     }
 
