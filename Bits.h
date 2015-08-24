@@ -24,9 +24,6 @@ class Bits {
 
 public:
 
-    virtual ~Bits();
-
-    u64 **LINK_ROOKS;
 #ifdef HAS_POPCNT
 
     static int bitCount(u64 bits) {
@@ -57,18 +54,11 @@ public:
         return __builtin_ffsll(bits) - 1;
     }
 
-    static int BITScanReverse(u64 bits) {
-        return 63 - __builtin_clzll(bits);
-    }
-
 #else
     static int BITScanForward(u64 bits) {
         return ((unsigned) bits) ? __builtin_ffs(bits) - 1 : __builtin_ffs(bits >> 32) + 31;
     }
 
-    static int BITScanReverse(u64 bits) {
-        return ((unsigned)(bits >> 32)) ? 63 - __builtin_clz(bits >> 32) : 31 - __builtin_clz(bits);
-    }
 #endif
 #else
 
@@ -84,32 +74,7 @@ public:
         return lsb_64_table[folded * 0x78291ACF >> 26];
     }
 
-
-    static int BITScanReverse(u64 bb) {
-        // authors Kim Walisch, Mark Dickinson
-        static const int index64[64] = {0, 47, 1, 56, 48, 27, 2, 60, 57, 49, 41, 37, 28, 16, 3, 61, 54, 58, 35, 52, 50,
-                                        42, 21, 44, 38, 32, 29, 23, 17, 11, 4, 62, 46, 55, 26, 59, 40, 36, 15, 53, 34,
-                                        51, 20, 43, 31, 22, 10, 45, 25, 39, 14, 33, 19, 30, 9, 24, 13, 18, 8, 12, 7, 6,
-                                        5, 63};
-        static const u64 debruijn64 = 0x03f79d71b4cb0a89ULL;
-        bb |= bb >> 1;
-        bb |= bb >> 2;
-        bb |= bb >> 4;
-        bb |= bb >> 8;
-        bb |= bb >> 16;
-        bb |= bb >> 32;
-        return index64[(bb * debruijn64) >> 58];
-    }
-
 #endif
 
-    u64 MASK_BIT_SET_NOBOUND[64][64];
-    //uchar DISTANCE[64][64];
-    char MASK_BIT_SET_COUNT[64][64];
-    char MASK_BIT_SET_NOBOUND_COUNT[64][64];
-
-
-private:
-    Bits();
 };
 
