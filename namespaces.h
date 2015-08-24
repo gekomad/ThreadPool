@@ -52,12 +52,12 @@ static mutex _CoutSyncMutex;
 
 template<typename T, typename... Args>
 void debug(T t, Args... args) {
-//    lock_guard<mutex> lock1(_CoutSyncMutex);
-//    nanoseconds ms = duration_cast<nanoseconds>(system_clock::now().time_since_epoch());
-//    cout << "info string TIME: " << ms.count() << " ";
-//
-//    _debug(t, args...);
-//    cout << "\n";
+    lock_guard<mutex> lock1(_CoutSyncMutex);
+    nanoseconds ms = duration_cast<nanoseconds>(system_clock::now().time_since_epoch());
+    cout << "info string TIME: " << ms.count() << " ";
+
+    _debug(t, args...);
+    cout << "\n";
 }
 
 #define ASSERT(a) assert(a)
