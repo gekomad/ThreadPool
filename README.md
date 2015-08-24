@@ -12,7 +12,7 @@ use:
 
 `test` directory contains an example, how to find prime numbers spreading the work in many threads, to compile:
 
-`cd test && g++ -pthread -std=c++11 *.cpp -o find_prime_number`
+`cd test && g++ -pthread -O3 -std=c++11 *.cpp -o find_prime_number`
 
 `./find_prime_number N_THREADS`
 
