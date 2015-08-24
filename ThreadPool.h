@@ -38,10 +38,8 @@ public:
 
     T &getNextThread() {
         lock_guard<mutex> lock1(mxRel);
-        debug("ThreadPool::getNextThread");
         unique_lock<mutex> lck(mtx);
         cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
-
         return getThread();
     }
 
