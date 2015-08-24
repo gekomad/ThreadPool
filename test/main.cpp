@@ -20,7 +20,7 @@
 #include "../ThreadPool.h"
 #include "MyClass.h"
 
-// cd test && g++ -pthread -std=c++11 *.cpp -o find_prime_number
+// cd test && g++ -pthread -O3 -std=c++11 *.cpp -o find_prime_number
 // ./find_prime_number N_THREADS
 
 using namespace std;
