@@ -63,7 +63,7 @@ void threads(bool *s1, int nThreads) {
 
 int main(int argc, char *argv[]) {
     if (argc == 1) {
-        cout << "missing n threads";
+        cout << "error, missing n threads\n";
         return 1;
     }
     bool *s1 = (bool *) malloc(sizeof(ARRAY_SIZE) * ARRAY_SIZE);
