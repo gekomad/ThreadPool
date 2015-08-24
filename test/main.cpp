@@ -20,23 +20,74 @@
 #include "../ThreadPool.h"
 #include "MyClass.h"
 
-//cd test && g++ -pthread -std=c++11 main.cpp MyClass.cpp
+// cd test && g++ -pthread -std=c++11 *.cpp -o find_prime_number
+// ./find_prime_number N_THREADS
 
 using namespace std;
 
-int main() {
-    srand(time(NULL));
-    int TOT = 100;
-    ThreadPool<MyClass> *threadPool = new ThreadPool<MyClass>();
-    threadPool->setNthread(4);
-    for (int i = 1; i <= TOT; i++) {
-        MyClass &s = threadPool->getNextThread();
-        debug("main thread -------------------------------", i, "/", TOT);
-        s.start();
+Ttot tot;
+
+void noThreads(bool *s1) {
+    unsigned tot = 0;
+    for (int i = 0; i <= ARRAY_SIZE; i++) {
+        s1[i] = MyClass::isPrime(i);
+        if (s1[i])tot++;
     }
+
+    debug("no thread TOT: ", tot);
+
+}
+
+void threads(bool *s1, int nThreads) {
+    ThreadPool<MyClass> *threadPool = new ThreadPool<MyClass>();
+    threadPool->setNthread(nThreads);
+    unsigned i = 0;
+
+    tot.count = 0;
+    int chunk = 10000;
+    do {
+
+        MyClass &s = threadPool->getNextThread();
+
+        s.init(&tot, i, i + chunk, s1);
+        i += chunk;
+        s.start();
+    } while (i < ARRAY_SIZE);
+
     debug("main thread wait for join");
     threadPool->joinAll();
     debug("main thread end");
     delete threadPool;
+    debug("thread: ", nThreads, "TOT: ", (int) tot.count);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        cout << "missing n threads";
+        return 1;
+    }
+    bool *s1 = (bool *) malloc(sizeof(ARRAY_SIZE) * ARRAY_SIZE);
+    assert(s1);
+
+    if (atoi(argv[1]) == 1) {
+        noThreads(s1);
+    } else {
+        int nThreads = atoi(argv[1]);
+        threads(s1, nThreads);
+    }
+    string name("first_" + to_string(tot.count) + "_prime_numbers.txt");
+    cout << "Found " << tot.count << " prime numbers\nWrite in " << name << endl;
+    std::ofstream fout(name);
+
+    for (int i = 0; i <= ARRAY_SIZE; i++) {
+        if (s1[i]) {
+            fout << i << ", ";
+        }
+    }
+    fout << std::endl;
+    fout.close();
+    cout << endl;
+    free(s1);
+
     return 0;
 }

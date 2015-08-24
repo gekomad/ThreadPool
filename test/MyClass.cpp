@@ -20,12 +20,26 @@
 #include "MyClass.h"
 
 void MyClass::run() {
-    for (int i = 0; i < 2; i++) {
-        debug("thread #", getId(), " step ", i, "/", 1);
-        sleep(rand() % 3);
+    debug("run thread #", getId());
+
+    tot = 0;
+    for (int i = from; i <= to; i++) {
+        s1[i] = isPrime(i);
+        if (s1[i])tot++;
     }
-};
+}
 
 void MyClass::endRun() {
-    debug("thread #", getId(), " terminated");
+    debug("endrun thread #", getId(), "tot: ", tot);
+    mainTot->count += tot;
+}
+
+void MyClass::init(Ttot *mainTot, unsigned from, unsigned to, bool *s1) {
+
+    this->mainTot = mainTot;
+    this->from = from;
+    this->to = std::min(to, ARRAY_SIZE);
+    this->s1 = s1;
+
+    tot = 0;
 }

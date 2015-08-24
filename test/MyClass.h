@@ -21,14 +21,45 @@
 #include "../Thread.h"
 #include <iostream>
 #include <unistd.h>
+#include <atomic>
+
+static const unsigned ARRAY_SIZE = 500000;
+
+typedef struct {
+    atomic_int count;
+} Ttot;
 
 class MyClass : public Thread {
 public:
 
     virtual void run();
 
+    void init(Ttot *mainTot, unsigned from, unsigned to, bool *s1);
 
     virtual void endRun();
 
+    static bool isPrime(int number) {
+        int count = 0;
+        for (int a = 1; a <= number; a++) {
+            if (number % a == 0) {
+                count++;
+            }
+        }
+        if (count == 2) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+private:
+
+    Ttot *mainTot;
+    u64 tot = 0;
+
+    unsigned from;
+    unsigned to;
+    bool *s1;
 
 };

@@ -40,7 +40,9 @@ public:
         lock_guard<mutex> lock1(mxRel);
         debug("ThreadPool::getNextThread");
         unique_lock<mutex> lck(mtx);
+        //cout <<Bits::bitCount(threadsBits)<<" "<<nThread<<endl;
         cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
+
         return getThread();
     }
 
@@ -116,7 +118,6 @@ private:
         threadPool[i]->join();
         ASSERT(!(threadsBits & POW2[i]));
         threadsBits |= POW2[i];
-        debug("ThreadPool::getNextThread inc bit");
         return *threadPool[i];
     }
 

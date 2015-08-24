@@ -57,7 +57,7 @@ void debug(T t, Args... args) {
     cout << "info string TIME: " << ms.count() << " ";
 
     _debug(t, args...);
-    cout << endl;
+    cout << "\n";
 }
 
 #define ASSERT(a) assert(a)
