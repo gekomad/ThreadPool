@@ -40,7 +40,6 @@ public:
         lock_guard<mutex> lock1(mxRel);
         debug("ThreadPool::getNextThread");
         unique_lock<mutex> lck(mtx);
-        //cout <<Bits::bitCount(threadsBits)<<" "<<nThread<<endl;
         cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
 
         return getThread();
