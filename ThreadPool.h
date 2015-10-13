@@ -31,10 +31,12 @@ template<typename T, typename = typename std::enable_if<std::is_base_of<Thread, 
 class ThreadPool : public ObserverThread {
 
 public:
-
-    ThreadPool() : threadsBits(0) {
-        setNthread(thread::hardware_concurrency());
+    ThreadPool(int t) {
+        threadsBits = 0;
+        setNthread(t);
     }
+
+    ThreadPool() : ThreadPool(thread::hardware_concurrency()) { }
 
     T &getNextThread() {
         lock_guard<mutex> lock1(mxRel);
@@ -55,14 +57,13 @@ public:
 
 #endif
 
-    void setNthread(const int t) {
-        int n = std::max(1, std::min(64, t));
-        if (n == nThread) {
-            return;
+    bool setNthread(const int t) {
+        if (t < 1 || t > 64 || t == nThread) {
+            return false;
         }
         joinAll();
         removeAllThread();
-        nThread = n;
+        nThread = t;
         ASSERT(threadsBits == 0);
         for (int i = 0; i < nThread; i++) {
             T *x = new T();
@@ -70,7 +71,8 @@ public:
             threadPool.push_back(x);
         }
         registerThreads();
-        cout << "ThreadPool size: " << getNthread() << "\n";
+//        cout << "ThreadPool size: " << getNthread() << "\n";
+        return true;
     }
 
     void joinAll() {
@@ -104,7 +106,7 @@ private:
 
     mutex mtx;
     atomic<u64> threadsBits;
-    int nThread;
+    int nThread = 0;
     condition_variable cv;
     mutex mxGet;
     mutex mxRel;
@@ -124,7 +126,7 @@ private:
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
         cv.notify_all();
-        debug("ThreadPool::releaseThread #", threadID);
+        debug( "ThreadPool::releaseThread #", threadID);
     }
 
     void observerEndThread(int threadID) {
