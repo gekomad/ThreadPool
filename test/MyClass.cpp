@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    https://github.com/gekomad/BlockingThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -20,18 +20,18 @@
 #include "MyClass.h"
 
 void MyClass::run() {
-    debug("run thread #", getId());
+    info("run thread #", getId());
 
-    tot = 0;
+    found = 0;
     for (int i = from; i <= to; i++) {
         s1[i] = isPrime(i);
-        if (s1[i])tot++;
+        if (s1[i])found++;
     }
 }
 
 void MyClass::endRun() {
-    debug("endrun thread #", getId(), "tot: ", tot);
-    mainTot->count += tot;
+    info("endRun thread #", getId(), " found: ", found);
+    mainTot->count += found;
 }
 
 void MyClass::init(Ttot *mainTot, unsigned from, unsigned to, bool *s1) {
@@ -41,5 +41,5 @@ void MyClass::init(Ttot *mainTot, unsigned from, unsigned to, bool *s1) {
     this->to = std::min(to, ARRAY_SIZE);
     this->s1 = s1;
 
-    tot = 0;
+    found = 0;
 }

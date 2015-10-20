@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    https://github.com/gekomad/BlockingThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "debug.h"
 #include "Thread.h"
 #include <atomic>
 #include <mutex>
@@ -71,7 +72,7 @@ public:
             threadPool.push_back(x);
         }
         registerThreads();
-//        cout << "ThreadPool size: " << getNthread() << "\n";
+        trace ("ThreadPool size: ", getNthread())
         return true;
     }
 
@@ -126,7 +127,7 @@ private:
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
         cv.notify_all();
-        debug( "ThreadPool::releaseThread #", threadID);
+        debug("ThreadPool::releaseThread #", threadID);
     }
 
     void observerEndThread(int threadID) {

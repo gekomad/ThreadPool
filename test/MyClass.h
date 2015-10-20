@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    https://github.com/gekomad/BlockingThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,13 @@
 */
 
 #pragma once
-
+#include "../debug.h"
 #include "../Thread.h"
 #include <iostream>
 #include <unistd.h>
 #include <atomic>
 
-static const unsigned ARRAY_SIZE = 500000;
+static const unsigned ARRAY_SIZE = 100000;
 
 typedef struct {
     atomic_int count;
@@ -56,7 +56,7 @@ public:
 private:
 
     Ttot *mainTot;
-    u64 tot = 0;
+    u64 found = 0;
 
     unsigned from;
     unsigned to;
