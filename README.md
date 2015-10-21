@@ -12,7 +12,7 @@ use:
 
 `test` directory contains an example, how to find prime 100000 numbers spreading the work on many threads, to compile:
 
-`cd test && g++ -pthread -O3 -DDLOG_LEVEL=INFO -std=c++11 *.cpp -o find_prime_number`
+`cd test && g++ -pthread -O3 -DDLOG_LEVEL=INFO -std=c++11 main.cpp MyClass.cpp -o find_prime_number`
 
 `./find_prime_number N_THREADS`
 
