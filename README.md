@@ -9,7 +9,9 @@ use:
 4. execute `run` method: `myThread.start()`
 
 example:
+
  `ThreadPool<MyClass> threadPool;`
+
   `threadPool.setNthread(4);//max 4 running threads`
 
   `for(int i=0;i<100;i++){`
