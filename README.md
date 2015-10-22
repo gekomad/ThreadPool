@@ -26,5 +26,4 @@ example:
 
 `./find_prime_number N_THREADS`
 
-N_THREADS max 64
 
