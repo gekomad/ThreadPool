@@ -13,7 +13,7 @@ example:
 ```c++
     ThreadPool<MyClass> threadPool;
     threadPool.setNthread(4);//max 4 running threads
-    for(int i=0;i<100;i++){
+    for (int i = 0; i < 100; i++) {
         MyClass &myThread = threadPool.getNextThread();
         myThread.start();
     }
