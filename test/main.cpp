@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/BlockingThreadPool
+    https://github.com/gekomad/ThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -39,15 +39,15 @@ void singleThreads(bool *s1) {
 }
 
 void multiThreads(bool *s1, int nThreads) {
-    ThreadPool<MyClass> *threadPool = new ThreadPool<MyClass>();
-    threadPool->setNthread(nThreads);
+    ThreadPool<MyClass> threadPool;
+    threadPool.setNthread(nThreads);
     unsigned i = 0;
 
     tot.count = 0;
 
     do {
         info(ARRAY_SIZE - i, " to end");
-        MyClass &s = threadPool->getNextThread();
+        MyClass &s = threadPool.getNextThread();
 
         s.init(&tot, i, i + CHUNK, s1);
         i += CHUNK;
@@ -55,9 +55,8 @@ void multiThreads(bool *s1, int nThreads) {
     } while (i < ARRAY_SIZE);
 
     debug("main thread wait for join");
-    threadPool->joinAll();
+    threadPool.joinAll();
     debug("main thread end");
-    delete threadPool;
     debug("threads: ", nThreads, "TOT: ", (int) tot.count);
 }
 
