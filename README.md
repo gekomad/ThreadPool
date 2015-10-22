@@ -9,12 +9,12 @@ use:
 4. execute `run` method: `myThread.start()`
 
 example:
- `ThreadPool<MyClass> threadPool;
-  threadPool.setNthread(4);//max 4 running threads
-  for(int i=0;i<100;i++){
-    MyClass &myThread = threadPool.getNextThread();
-    myThread.start();
-  }
+ `ThreadPool<MyClass> threadPool;`
+  `threadPool.setNthread(4);//max 4 running threads`
+  `for(int i=0;i<100;i++){`
+  `  MyClass &myThread = threadPool.getNextThread();`
+  `  myThread.start();`
+  `}`
   threadPool.joinAll();`
 
 `test` directory contains an example, how to find prime 100000 numbers spreading the work on many threads, to compile:
