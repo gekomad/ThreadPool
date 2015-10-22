@@ -60,34 +60,46 @@ void multiThreads(bool *s1, int nThreads) {
     debug("threads: ", nThreads, "TOT: ", (int) tot.count);
 }
 
+static unsigned diffTime(high_resolution_clock::time_point t1, high_resolution_clock::time_point t2) {
+    std::chrono::duration<double, std::milli> elapsed = t1 - t2;
+    return elapsed.count();
+}
+
 int main(int argc, char *argv[]) {
-    cout << "Find first " << ARRAY_SIZE << " prime numbers\n";
+    cout << "Find prime numbers from 0 to " << ARRAY_SIZE << endl;
     if (argc == 1) {
         cout << "use: " << argv[0] << " N_THREADS\n";
         return 1;
     }
     bool *s1 = (bool *) malloc(sizeof(ARRAY_SIZE) * ARRAY_SIZE);
     assert(s1);
-
+    unsigned millsec;
     if (atoi(argv[1]) == 1) {
         info ("single thread..");
+        auto start = std::chrono::high_resolution_clock::now();
         singleThreads(s1);
+        auto end = std::chrono::high_resolution_clock::now();
+        millsec = diffTime(end, start);
     } else {
         if (atoi(argv[1]) <= 0 || atoi(argv[1]) > 64) {
             cout << "error. N_THREADS > 0 and <=64 \n";
             return 1;
         }
+
         info ("multi threads..");
         int nThreads = atoi(argv[1]);
+        auto start = std::chrono::high_resolution_clock::now();
         multiThreads(s1, nThreads);
+        auto end = std::chrono::high_resolution_clock::now();
+        millsec = diffTime(end, start);
     }
-    string name("first_" + to_string(ARRAY_SIZE) + "_prime_numbers.txt");
-    cout << "Found " << tot.count << " prime numbers in " << name << endl;
+    string name("prime_numbers.txt");
+    cout << "\nTime " << millsec << " millsec output in " << name << endl;
     std::ofstream fout(name);
 
     for (int i = 0; i <= ARRAY_SIZE; i++) {
         if (s1[i]) {
-            fout << i << ", ";
+            fout << i << "\n";
         }
     }
     fout << std::endl;
