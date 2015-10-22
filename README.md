@@ -24,7 +24,7 @@ example:
 
   `threadPool.joinAll();`
 
-```javascript
+```c++
 function fancyAlert(arg) {
   if(arg) {
     $.facebox({div:'#foo'})
