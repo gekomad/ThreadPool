@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/Auriga
+    https://github.com/gekomad/ThreadPool
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,26 @@
 
 #pragma once
 
-#include "../util/Singleton.h"
+#include "Singleton.h"
+#include <fstream>
+#include <mutex>
+#include <cxxabi.h>
+#include <stdio.h>
+#include <string>
+#include <iostream>
+#include <chrono>
+#include <algorithm>
 
+using namespace std::chrono;
 using namespace std;
+
+
+namespace _logger {
+
+    static enum LOG_LEVEL {
+        TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4, FATAL = 5, OFF = 6, ALWAYS = 7
+    } _LOG_LEVEL;
+
 
 #if !defined DLOG_LEVEL
 #if defined DEBUG_MODE
@@ -29,12 +46,6 @@ using namespace std;
 #define DLOG_LEVEL OFF
 #endif
 #endif
-
-namespace _logger {
-
-    static enum LOG_LEVEL {
-        TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4, FATAL = 5, OFF = 6, ALWAYS = 7
-    } _LOG_LEVEL;
 
     static const string LOG_LEVEL_STRING[] = {"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF", "LOG"};
 
@@ -48,12 +59,17 @@ namespace _logger {
 
         template<LOG_LEVEL type, typename T, typename... Args>
         void _log(T t, Args... args) {
-            lock_guard<mutex> lock1(_CoutSyncMutex);
-            cout << Time::getLocalTime() << " " << LOG_LEVEL_STRING[type] << " ";
-            *this << Time::getLocalTime() << " " << LOG_LEVEL_STRING[type] << " ";
+            lock_guard<mutex> lock1(_CoutSyncMutex);//TODO Mutex
+//        nanoseconds ms = duration_cast<nanoseconds>(system_clock::now().time_since_epoch());
+//        cout << ">>" << LOG_LEVEL_STRING[type] << " nanoseconds:" << ms.count() << " ";
+
+            time_t current = chrono::system_clock::to_time_t(chrono::system_clock::now());
+            string now = (ctime(&current));
+            now.erase(find_if(now.rbegin(), now.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), now.end());
+            cout << LOG_LEVEL_STRING[type] << " " << now << " ";
+
             __log(t, args...);
             cout << endl;
-            *this << endl;
         }
 
     private:
@@ -87,12 +103,13 @@ namespace _logger {
 
 #define LINE_INFO __FILENAME__,":",__LINE__," "
 
-#define log(...)                            {logger._log<LOG_LEVEL::ALWAYS>(LINE_INFO,__VA_ARGS__);}
-#define trace(...) if (TRACE >= DLOG_LEVEL) {logger._log<LOG_LEVEL::TRACE>( LINE_INFO,__VA_ARGS__);}
-#define debug(...) if (DEBUG >= DLOG_LEVEL) {logger._log<LOG_LEVEL::DEBUG>( LINE_INFO,__VA_ARGS__);}
-#define info(...)  if (INFO  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::INFO> ( LINE_INFO,__VA_ARGS__);}
-#define warn(...)  if (WARN  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::WARN> ( LINE_INFO,__VA_ARGS__);}
-#define error(...) if (ERROR >= DLOG_LEVEL) {logger._log<LOG_LEVEL::ERROR>( LINE_INFO,__VA_ARGS__);}
-#define fatal(...) if (FATAL >= DLOG_LEVEL) {logger._log<LOG_LEVEL::FATAL>( LINE_INFO,__VA_ARGS__);}
+#define log(...)                                                {logger._log<LOG_LEVEL::ALWAYS>(LINE_INFO,__VA_ARGS__);}
+#define trace(...) if (_logger::LOG_LEVEL::TRACE >= DLOG_LEVEL) {logger._log<LOG_LEVEL::TRACE>( LINE_INFO,__VA_ARGS__);}
+#define debug(...) if (_logger::LOG_LEVEL::DEBUG >= DLOG_LEVEL) {logger._log<LOG_LEVEL::DEBUG>( LINE_INFO,__VA_ARGS__);}
+#define info(...)  if (_logger::LOG_LEVEL::INFO  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::INFO> ( LINE_INFO,__VA_ARGS__);}
+#define warn(...)  if (_logger::LOG_LEVEL::WARN  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::WARN> ( LINE_INFO,__VA_ARGS__);}
+#define error(...) if (_logger::LOG_LEVEL::ERROR >= DLOG_LEVEL) {logger._log<LOG_LEVEL::ERROR>( LINE_INFO,__VA_ARGS__);}
+#define fatal(...) if (_logger::LOG_LEVEL::FATAL >= DLOG_LEVEL) {logger._log<LOG_LEVEL::FATAL>( LINE_INFO,__VA_ARGS__);}
 
 }
+using namespace _logger;

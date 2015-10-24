@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "../debug.h"
+#include "../logger.h"
 #include "../Thread.h"
 #include <iostream>
 #include <unistd.h>

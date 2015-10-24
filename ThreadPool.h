@@ -18,13 +18,14 @@
 
 #pragma once
 
-#include "debug.h"
+#include "logger.h"
 #include "Thread.h"
 #include <atomic>
-#include <mutex>
+
 #include <unistd.h>
 #include "ObserverThread.h"
 #include "namespaces.h"
+#include "Mutex.h"
 #include "Bits.h"
 #include <condition_variable>
 
@@ -40,10 +41,13 @@ public:
     ThreadPool() : ThreadPool(thread::hardware_concurrency()) { }
 
     T &getNextThread() {
-        lock_guard<mutex> lock1(mxRel);
+        
+		mxRel.lock();
         unique_lock<mutex> lck(mtx);
         cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
-        return getThread();
+		T& x=getThread();
+		mxRel.unlock();
+        return x;
     }
 
     int getNthread() const {
@@ -59,7 +63,8 @@ public:
 #endif
 
     bool setNthread(const int t) {
-        if (t < 1 || t > 64 || t == nThread) {
+        if (t < 1 || t > 64) {
+            warn("invalid value");
             return false;
         }
         joinAll();
@@ -109,25 +114,28 @@ private:
     atomic<u64> threadsBits;
     int nThread = 0;
     condition_variable cv;
-    mutex mxGet;
-    mutex mxRel;
+    Mutex mxGet;
+    Mutex mxRel;
 
     T &getThread() {
-        lock_guard<mutex> lock1(mxGet);
+        mxGet.lock();
         int i = Bits::BITScanForwardUnset(threadsBits);
         threadPool[i]->join();
         ASSERT(!(threadsBits & POW2[i]));
         threadsBits |= POW2[i];
-        return *threadPool[i];
+        T &x=*threadPool[i];
+        mxGet.unlock();
+        return x;
     }
 
     void releaseThread(const int threadID) {
         ASSERT_RANGE(threadID, 0, 63);
-        lock_guard<mutex> lock1(mxGet);
+        mxGet.lock();
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
         cv.notify_all();
-        debug("ThreadPool::releaseThread #", threadID);
+        debug( "ThreadPool::releaseThread #", threadID);
+		mxGet.unlock();
     }
 
     void observerEndThread(int threadID) {
