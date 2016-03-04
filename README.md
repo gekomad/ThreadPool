@@ -22,7 +22,7 @@ example:
 
 `test` directory contains an example, how to find prime numbers from 0 to 100,000 spreading the work on many threads, to compile:
 
-`cd test && g++ -pthread -O3 -DDLOG_LEVEL=INFO -std=c++11 main.cpp MyClass.cpp -o find_prime_number`
+`cd test && g++ -pthread -O3 -DDLOG_LEVEL=_INFO -std=c++11 main.cpp MyClass.cpp ../util/String.cpp -o find_prime_number`
 
 `./find_prime_number N_THREADS`
 

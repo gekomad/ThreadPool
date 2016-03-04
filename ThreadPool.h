@@ -24,29 +24,25 @@
 
 #include <unistd.h>
 #include "ObserverThread.h"
-#include "namespaces.h"
+#include "util/namespaces.h"
 #include "Mutex.h"
-#include "Bits.h"
+#include "util/Bits.h"
 #include <condition_variable>
 
 template<typename T, typename = typename std::enable_if<std::is_base_of<Thread, T>::value, T>::type>
 class ThreadPool : public ObserverThread {
 
 public:
-    ThreadPool(int t) {
-        threadsBits = 0;
+    ThreadPool(int t) : threadsBits(0) {
         setNthread(t);
     }
 
     ThreadPool() : ThreadPool(thread::hardware_concurrency()) { }
 
     T &getNextThread() {
-//		mxRel.lock();
         unique_lock<mutex> lck(mtx);
         cv.wait(lck, [this] { return Bits::bitCount(threadsBits) != nThread; });
-		T& x=getThread();
-//		mxRel.unlock();
-        return x;
+        return getThread();
     }
 
     int getNthread() const {
@@ -113,28 +109,21 @@ private:
     atomic<u64> threadsBits;
     int nThread = 0;
     condition_variable cv;
-//    Mutex mxGet;
-//    Mutex mxRel;
 
     T &getThread() {
-//        mxGet.lock();
         int i = Bits::BITScanForwardUnset(threadsBits);
         threadPool[i]->join();
         ASSERT(!(threadsBits & POW2[i]));
         threadsBits |= POW2[i];
-        T &x=*threadPool[i];
-//        mxGet.unlock();
-        return x;
+        return *threadPool[i];
     }
 
     void releaseThread(const int threadID) {
         ASSERT_RANGE(threadID, 0, 63);
-//        mxGet.lock();
         ASSERT(threadsBits & POW2[threadID]);
         threadsBits &= ~POW2[threadID];
         cv.notify_all();
-        debug( "ThreadPool::releaseThread #", threadID);
-//		mxGet.unlock();
+        debug("ThreadPool::releaseThread #", threadID);
     }
 
     void observerEndThread(int threadID) {
@@ -155,7 +144,5 @@ private:
         threadPool.clear();
         ASSERT(threadsBits == 0);
     }
-
 };
-
 

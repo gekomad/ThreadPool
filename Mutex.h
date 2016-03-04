@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -18,26 +18,26 @@
 
 #pragma once
 
-#ifdef _WIN32
+
+#if defined(_WIN32)
+//mutex on windows is slow
+//https://msdn.microsoft.com/en-us/library/ms682530%28VS.85%29.aspx
 
 #include <windows.h>
 
+
 class Mutex {
-private:
-    volatile LONG _lock;
-
 public:
+    Mutex() { InitializeCriticalSection(&cs); }
 
-    void lock() {
-        while (true) {
-            if (!_InterlockedExchange((LPLONG)(&_lock), 1))
-                return;
-            while (_lock);
-        }
-    }
+    ~Mutex() { DeleteCriticalSection(&cs); }
 
-    void unlock() { _lock = 0; }
+    void lock() { EnterCriticalSection(&cs); }
 
+    void unlock() { LeaveCriticalSection(&cs); }
+
+private:
+    CRITICAL_SECTION cs;
 };
 
 #else

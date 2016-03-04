@@ -1,5 +1,5 @@
 /*
-    https://github.com/gekomad/ThreadPool
+    Cinnamon UCI chess engine
     Copyright (C) Giuseppe Cannella
 
     This program is free software: you can redistribute it and/or modify
@@ -16,34 +16,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// compile time logger
 #pragma once
 
-#include "Singleton.h"
 #include <fstream>
-#include <mutex>
-#include <cxxabi.h>
-#include <stdio.h>
-#include <string>
-#include <iostream>
-#include <chrono>
-#include <algorithm>
+#include "util/Singleton.h"
+#include "util/Time.h"
+#include "Spinlock.h"
 
-using namespace std::chrono;
+
 using namespace std;
-
 
 namespace _logger {
 
     static enum LOG_LEVEL {
-        TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4, FATAL = 5, OFF = 6, ALWAYS = 7
+        _TRACE = 0, _DEBUG = 1, _INFO = 2, _WARN = 3, _ERROR = 4, _FATAL = 5, _OFF = 6
     } _LOG_LEVEL;
-
 
 #if !defined DLOG_LEVEL
 #if defined DEBUG_MODE
-#define DLOG_LEVEL TRACE
+#define DLOG_LEVEL _TRACE
 #else
-#define DLOG_LEVEL OFF
+#define DLOG_LEVEL _OFF
+#endif
+#else
+#if defined DEBUG_MODE
+#define DLOG_LEVEL _TRACE
 #endif
 #endif
 
@@ -59,21 +57,17 @@ namespace _logger {
 
         template<LOG_LEVEL type, typename T, typename... Args>
         void _log(T t, Args... args) {
-            lock_guard<mutex> lock1(_CoutSyncMutex);//TODO Mutex
-//        nanoseconds ms = duration_cast<nanoseconds>(system_clock::now().time_since_epoch());
-//        cout << ">>" << LOG_LEVEL_STRING[type] << " nanoseconds:" << ms.count() << " ";
-
-            time_t current = chrono::system_clock::to_time_t(chrono::system_clock::now());
-            string now = (ctime(&current));
-            now.erase(find_if(now.rbegin(), now.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), now.end());
-            cout << LOG_LEVEL_STRING[type] << " " << now << " ";
-
+            _CoutSyncSpinlock.lock();
+            cout << Time::getLocalTime() << " " << LOG_LEVEL_STRING[type] << " ";
+            *this << Time::getLocalTime() << " " << LOG_LEVEL_STRING[type] << " ";
             __log(t, args...);
             cout << endl;
+            *this << endl;
+            _CoutSyncSpinlock.unlock();
         }
 
     private:
-        mutex _CoutSyncMutex;
+        Spinlock _CoutSyncSpinlock;
 
         template<typename T>
         void __log(T t) {
@@ -95,21 +89,23 @@ namespace _logger {
 
     static Logger &logger = Logger::getInstance();
 
-#if defined(_WIN32)
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#ifdef _WIN32
+#define FILE_SEPARATOR '\\'
 #else
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define FILE_SEPARATOR '/'
 #endif
+
+#define __FILENAME__ (strrchr(__FILE__, FILE_SEPARATOR) ? strrchr(__FILE__, FILE_SEPARATOR) + 1 : __FILE__)
 
 #define LINE_INFO __FILENAME__,":",__LINE__," "
 
-#define log(...)                                                {logger._log<LOG_LEVEL::ALWAYS>(LINE_INFO,__VA_ARGS__);}
-#define trace(...) if (_logger::LOG_LEVEL::TRACE >= DLOG_LEVEL) {logger._log<LOG_LEVEL::TRACE>( LINE_INFO,__VA_ARGS__);}
-#define debug(...) if (_logger::LOG_LEVEL::DEBUG >= DLOG_LEVEL) {logger._log<LOG_LEVEL::DEBUG>( LINE_INFO,__VA_ARGS__);}
-#define info(...)  if (_logger::LOG_LEVEL::INFO  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::INFO> ( LINE_INFO,__VA_ARGS__);}
-#define warn(...)  if (_logger::LOG_LEVEL::WARN  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::WARN> ( LINE_INFO,__VA_ARGS__);}
-#define error(...) if (_logger::LOG_LEVEL::ERROR >= DLOG_LEVEL) {logger._log<LOG_LEVEL::ERROR>( LINE_INFO,__VA_ARGS__);}
-#define fatal(...) if (_logger::LOG_LEVEL::FATAL >= DLOG_LEVEL) {logger._log<LOG_LEVEL::FATAL>( LINE_INFO,__VA_ARGS__);}
+#define trace(...) if (_TRACE >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_TRACE>( LINE_INFO,__VA_ARGS__);}
+#define debug(...) if (_DEBUG >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_DEBUG>( LINE_INFO,__VA_ARGS__);}
+#define info(...)  if (_INFO  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_INFO> ( LINE_INFO,__VA_ARGS__);}
+#define warn(...)  if (_WARN  >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_WARN> ( LINE_INFO,__VA_ARGS__);}
+#define error(...) if (_ERROR >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_ERROR>( LINE_INFO,__VA_ARGS__);}
+#define fatal(...) if (_FATAL >= DLOG_LEVEL) {logger._log<LOG_LEVEL::_FATAL>( LINE_INFO,__VA_ARGS__);}
 
 }
+
 using namespace _logger;
