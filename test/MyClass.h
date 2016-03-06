@@ -24,13 +24,13 @@
 #include <unistd.h>
 #include <atomic>
 
-static const unsigned ARRAY_SIZE = 100000;
+static const unsigned ARRAY_SIZE = 300000;
 
 typedef struct {
     atomic_int count;
 } Ttot;
 
-class MyClass : public Thread {
+class MyClass : public Thread<MyClass> {
 public:
 
     virtual void run();

@@ -29,7 +29,7 @@
 #include "util/Bits.h"
 #include <condition_variable>
 
-template<typename T, typename = typename std::enable_if<std::is_base_of<Thread, T>::value, T>::type>
+template<typename T>
 class ThreadPool : public ObserverThread {
 
 public:
